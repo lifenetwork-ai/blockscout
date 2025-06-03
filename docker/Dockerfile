@@ -84,5 +84,5 @@ USER ${BLOCKSCOUT_USER}:${BLOCKSCOUT_GROUP}
 ENV PORT=4000
 EXPOSE 4000
 
-# Start release
-CMD ["./bin/blockscout", "start"]
+# Start run service
+CMD ["mix", "phx.server"]
