@@ -1,16 +1,19 @@
+# =======================
+# Build Stage
+# =======================
 FROM hexpm/elixir:1.17.3-erlang-27.3.4-alpine-3.21.3 AS builder
 
 ENV MIX_ENV=prod
 ENV PORT=4000
-
 WORKDIR /app
 
+# Install dependencies
 RUN apk --no-cache --update add \
   alpine-sdk gmp-dev automake libtool inotify-tools autoconf \
   python3 file gcompat libstdc++ curl ca-certificates git make bash \
   nodejs npm openssl
 
-# Copy the application source code
+# Copy source
 COPY . .
 
 # Install Elixir deps
@@ -20,7 +23,7 @@ RUN mix local.hex --force && \
     mix deps.compile && \
     mix compile
 
-# Build frontend assets
+# Build frontend
 RUN cd apps/block_scout_web/assets && \
     npm install && \
     node_modules/webpack/bin/webpack.js --mode production && \
@@ -30,12 +33,28 @@ RUN cd apps/block_scout_web/assets && \
     cd - && \
     mix phx.digest
 
-# Generate self-signed cert
+# Generate TLS cert
 RUN cd apps/block_scout_web && \
     mix phx.gen.cert blockscout blockscout.local && \
     cd -
 
-# Create user and group
+# Build release
+RUN mix release blockscout && \
+    mkdir -p /opt/release && \
+    cp -r _build/prod/rel/blockscout /opt/release/
+
+# =======================
+# Runtime Stage
+# =======================
+FROM alpine:3.21
+
+ENV LANG=C.UTF-8
+ENV PORT=4000
+WORKDIR /app
+
+# Runtime deps
+RUN apk --no-cache --update add openssl ncurses libstdc++ curl
+
 ARG BLOCKSCOUT_USER=blockscout
 ARG BLOCKSCOUT_GROUP=blockscout
 ARG BLOCKSCOUT_UID=10001
@@ -44,11 +63,9 @@ ARG BLOCKSCOUT_GID=10001
 RUN addgroup -g ${BLOCKSCOUT_GID} ${BLOCKSCOUT_GROUP} && \
     adduser -S -u ${BLOCKSCOUT_UID} -G ${BLOCKSCOUT_GROUP} ${BLOCKSCOUT_USER}
 
-# Change ownership
-RUN chown -R ${BLOCKSCOUT_USER}:${BLOCKSCOUT_GROUP} /app
+COPY --from=builder --chown=${BLOCKSCOUT_USER}:${BLOCKSCOUT_GROUP} /opt/release/blockscout ./
 
 USER ${BLOCKSCOUT_USER}
-
 EXPOSE 4000
 
-CMD ["mix", "phx.server"]
+CMD ["./bin/blockscout", "start"]
