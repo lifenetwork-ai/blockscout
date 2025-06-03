@@ -10,7 +10,7 @@ RUN apk --no-cache --update add \
   python3 file gcompat libstdc++ curl ca-certificates git make bash \
   nodejs npm openssl
 
-# Copy toàn bộ source trước để tránh missing deps
+# Copy the application source code
 COPY . .
 
 # Install Elixir deps
