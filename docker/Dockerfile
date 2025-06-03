@@ -23,7 +23,7 @@ RUN mix local.hex --force && \
     mix deps.compile && \
     mix compile
 
-# Build frontend
+# Build frontend assets
 RUN cd apps/block_scout_web/assets && \
     npm install && \
     node_modules/webpack/bin/webpack.js --mode production && \
@@ -38,10 +38,12 @@ RUN cd apps/block_scout_web && \
     mix phx.gen.cert blockscout blockscout.local && \
     cd -
 
-# Build release
+# Build release & include config_helper.exs
 RUN mix release blockscout && \
+    RELEASE_VERSION=8.1.1 && \
     mkdir -p /opt/release && \
-    cp -r _build/prod/rel/blockscout /opt/release/
+    cp -r _build/prod/rel/blockscout /opt/release/ && \
+    cp config/config_helper.exs /opt/release/blockscout/releases/$RELEASE_VERSION/
 
 # =======================
 # Runtime Stage
