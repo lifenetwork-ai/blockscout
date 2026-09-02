@@ -60,8 +60,8 @@ defmodule Explorer do
   `Explorer.Chain.OrderedCache`). Without a cluster that list is empty, so the
   API cache is filled once on the first miss and never changes.
 
-  Returns `false` for an unclustered API process so list endpoints read Postgres
-  instead of that snapshot.
+  Returns `false` for an API process with no connected nodes so list endpoints
+  read Postgres instead of that snapshot.
   """
   @spec serve_local_ordered_cache?() :: boolean()
   def serve_local_ordered_cache? do

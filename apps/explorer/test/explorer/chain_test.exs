@@ -1612,7 +1612,7 @@ defmodule Explorer.ChainTest do
     end
 
     test "combined mode keeps serving the local ordered cache" do
-      paging_options = __omp_magic("", "PagingOptions{page_size: 4}")
+      paging_options = %PagingOptions{page_size: 4}
 
       stale =
         1..4
@@ -1637,7 +1637,7 @@ defmodule Explorer.ChainTest do
 
       assert Node.list() == []
 
-      paging_options = __omp_magic("", "PagingOptions{page_size: 4}")
+      paging_options = %PagingOptions{page_size: 4}
 
       stale =
         1..4

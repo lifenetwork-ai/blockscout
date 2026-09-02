@@ -937,7 +937,7 @@ defmodule Explorer.Chain.TransactionTest do
 
       assert Node.list() == []
 
-      paging_options = __omp_magic("", "Explorer.PagingOptions{page_size: 4}")
+      paging_options = %PagingOptions{page_size: 4}
 
       stale =
         1..4
