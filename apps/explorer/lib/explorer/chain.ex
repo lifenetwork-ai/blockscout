@@ -1358,30 +1358,38 @@ defmodule Explorer.Chain do
   end
 
   defp block_from_cache(block_type, paging_options, necessity_by_association, options) do
-    case Blocks.atomic_take_enough(paging_options.page_size) do
-      nil ->
-        elements = fetch_blocks(block_type, paging_options, necessity_by_association, options)
+    if Explorer.serve_local_ordered_cache?() do
+      case Blocks.atomic_take_enough(paging_options.page_size) do
+        nil ->
+          elements = fetch_blocks(block_type, paging_options, necessity_by_association, options)
 
-        Blocks.update(elements)
+          Blocks.update(elements)
 
-        elements
+          elements
 
-      blocks ->
-        blocks |> select_repo(options).preload(Map.keys(necessity_by_association))
+        blocks ->
+          blocks |> select_repo(options).preload(Map.keys(necessity_by_association))
+      end
+    else
+      fetch_blocks(block_type, paging_options, necessity_by_association, options)
     end
   end
 
   defp uncles_from_cache(block_type, paging_options, necessity_by_association, options) do
-    case Uncles.atomic_take_enough(paging_options.page_size) do
-      nil ->
-        elements = fetch_blocks(block_type, paging_options, necessity_by_association, options)
+    if Explorer.serve_local_ordered_cache?() do
+      case Uncles.atomic_take_enough(paging_options.page_size) do
+        nil ->
+          elements = fetch_blocks(block_type, paging_options, necessity_by_association, options)
 
-        Uncles.update(elements)
+          Uncles.update(elements)
 
-        elements
+          elements
 
-      blocks ->
-        blocks
+        blocks ->
+          blocks
+      end
+    else
+      fetch_blocks(block_type, paging_options, necessity_by_association, options)
     end
   end
 

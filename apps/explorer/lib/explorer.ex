@@ -49,4 +49,22 @@ defmodule Explorer do
       Application.get_env(:explorer, :mode)
     end
   end
+
+  @doc """
+  Whether process-local `Explorer.Chain.OrderedCache` entries are safe to serve.
+
+  Combined mode (`:all`) writes those caches in the same BEAM node, so
+  `ttl_check_interval: false` and `global_ttl: nil` are intentional: the indexer
+  updates the cache on import. Split `APPLICATION_MODE=api` receives those
+  updates only through indexer `:erpc` multicast to `Node.list/0` (see
+  `Explorer.Chain.OrderedCache`). Without a cluster that list is empty, so the
+  API cache is filled once on the first miss and never changes.
+
+  Returns `false` for an API process with no connected nodes so list endpoints
+  read Postgres instead of that snapshot.
+  """
+  @spec serve_local_ordered_cache?() :: boolean()
+  def serve_local_ordered_cache? do
+    mode() != :api or Node.list() != []
+  end
 end

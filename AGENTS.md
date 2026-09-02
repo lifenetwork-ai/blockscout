@@ -63,3 +63,4 @@ How to distinguish active updaters from passive caches when deciding the mode:
 - **Active periodic updater**: has `schedule_next_consolidation()`, `handle_info(:consolidate)`, writes to `last_fetched_counters` via `LastFetchedCounter.upsert()` -> `:indexer`
 - **Passive on-demand ETS cache**: has `fetch()` with cache expiry check, stores in ETS via `Helper.put_into_ets_cache()`, may update model columns -> `:api`
 - **MapCache (ConCache)**: uses `use Explorer.Chain.MapCache`, implements `handle_fallback` -> `:api`
+- **OrderedCache (ConCache)**: `Blocks` / `Transactions` / `Uncles` are written by the indexer. `ttl_check_interval: false` and `global_ttl: nil` are intentional. Split API nodes receive updates via `:erpc` multicast to `Node.list/0` (requires libcluster / `K8S_SERVICE`). Unclustered `APPLICATION_MODE=api` must not serve those local entries; `Explorer.serve_local_ordered_cache?/0` falls back to Postgres.
