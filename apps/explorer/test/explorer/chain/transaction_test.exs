@@ -929,6 +929,34 @@ defmodule Explorer.Chain.TransactionTest do
       assert fetched_transaction.hash == transaction.hash
       assert length(fetched_transaction.token_transfers) == 2
     end
+
+    test "api mode without a cluster reads latest collated transactions from the database" do
+      old_mode = Application.get_env(:explorer, :mode)
+      Application.put_env(:explorer, :mode, :api)
+      on_exit(fn -> Application.put_env(:explorer, :mode, old_mode) end)
+
+      assert Node.list() == []
+
+      paging_options = __omp_magic("", "Explorer.PagingOptions{page_size: 4}")
+
+      stale =
+        1..4
+        |> Enum.map(fn n ->
+          block = insert(:block, number: n)
+          insert(:transaction) |> with_block(block)
+        end)
+
+      Explorer.Chain.Cache.Transactions.update(stale)
+
+      fresh_block = insert(:block, number: 100)
+      fresh = insert(:transaction) |> with_block(fresh_block)
+
+      hashes =
+        Transaction.recent_collated_transactions(true, paging_options: paging_options)
+        |> Enum.map(& &1.hash)
+
+      assert hd(hashes) == fresh.hash
+    end
   end
 
   describe "update_replaced_transactions/2" do

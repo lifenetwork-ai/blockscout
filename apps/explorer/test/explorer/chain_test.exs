@@ -1610,6 +1610,50 @@ defmodule Explorer.ChainTest do
                |> Enum.map(& &1.number)
                |> Enum.reverse()
     end
+
+    test "combined mode keeps serving the local ordered cache" do
+      paging_options = __omp_magic("", "PagingOptions{page_size: 4}")
+
+      stale =
+        1..4
+        |> Enum.map(&insert(:block, number: &1))
+        |> Repo.preload([:transactions, [miner: :names], :rewards])
+
+      Explorer.Chain.Cache.Blocks.update(stale)
+      insert(:block, number: 100)
+
+      numbers =
+        [paging_options: paging_options]
+        |> Chain.list_blocks()
+        |> Enum.map(& &1.number)
+
+      refute 100 in numbers
+    end
+
+    test "api mode without a cluster reads latest blocks from the database" do
+      old_mode = Application.get_env(:explorer, :mode)
+      Application.put_env(:explorer, :mode, :api)
+      on_exit(fn -> Application.put_env(:explorer, :mode, old_mode) end)
+
+      assert Node.list() == []
+
+      paging_options = __omp_magic("", "PagingOptions{page_size: 4}")
+
+      stale =
+        1..4
+        |> Enum.map(&insert(:block, number: &1))
+        |> Repo.preload([:transactions, [miner: :names], :rewards])
+
+      Explorer.Chain.Cache.Blocks.update(stale)
+      insert(:block, number: 100)
+
+      numbers =
+        [paging_options: paging_options]
+        |> Chain.list_blocks()
+        |> Enum.map(& &1.number)
+
+      assert hd(numbers) == 100
+    end
   end
 
   describe "number_to_block/1" do
