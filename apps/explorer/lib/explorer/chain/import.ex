@@ -148,10 +148,19 @@ defmodule Explorer.Chain.Import do
          {:ok, runner_to_changes_list} <- runner_to_changes_list(valid_runner_option_pairs),
          {:ok, data} <- insert_runner_to_changes_list(runner_to_changes_list, options) do
       Notify.async(data[:transactions])
-      Publisher.broadcast(data, Map.get(options, :broadcast, false))
+      Publisher.broadcast(new_transaction_event_data(data), Map.get(options, :broadcast, false))
       {:ok, data}
     end
   end
+
+  defp new_transaction_event_data(%{transactions: transactions} = data) do
+    case Enum.filter(transactions, &(&1.inserted_at == &1.updated_at)) do
+      [] -> Map.delete(data, :transactions)
+      new_transactions -> %{data | transactions: new_transactions}
+    end
+  end
+
+  defp new_transaction_event_data(data), do: data
 
   @doc """
   Prepares a bulk import transaction without executing it.
