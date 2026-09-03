@@ -530,6 +530,19 @@ defmodule Explorer.Chain.ImportTest do
       assert_receive {:chain_event, :transactions, :realtime, [%Transaction{}]}
     end
 
+    test "does not publish existing transaction updates as new transactions" do
+      Subscriber.to(:transactions, :realtime)
+
+      assert {:ok, _} = Import.all(@import_data)
+      assert_receive {:chain_event, :transactions, :realtime, [%Transaction{}]}
+
+      updated_import_data =
+        update_in(@import_data, [:transactions, :params, Access.at(0), :gas_used], &(&1 + 1))
+
+      assert {:ok, _} = Import.all(updated_import_data)
+      refute_receive {:chain_event, :transactions, :realtime, [%Transaction{}]}
+    end
+
     test "publishes token_transfers data to subscribers on insert" do
       Subscriber.to(:token_transfers, :realtime)
 
