@@ -70,6 +70,18 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelperTest do
       assert config[:static_match]["api/account/v2/authenticate_via_wallet"][:isolate_rate_limit?] == true
     end
 
+    test "uses local config when URL is not configured" do
+      Application.put_env(:block_scout_web, :api_rate_limit, config_url: nil)
+
+      log =
+        ExUnit.CaptureLog.capture_log(fn ->
+          RateLimitConfigHelper.store_rate_limit_config()
+        end)
+
+      assert log == ""
+      assert is_map(:persistent_term.get(:rate_limit_config)[:static_match]["default"])
+    end
+
     test "correctly categorizes different path types when fetching config" do
       config = %{
         "api/v2/*" => %{"limit" => 100},

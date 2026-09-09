@@ -110,8 +110,6 @@ defmodule BlockScoutWeb.Application do
         {Main, name: Main},
         {SmartContract, name: SmartContract},
         {TokenTransfer, name: TokenTransfer},
-        {BlocksIndexedCounter, name: BlocksIndexedCounter},
-        {InternalTransactionsIndexedCounter, name: InternalTransactionsIndexedCounter},
         {EventHandlersMetrics, []},
         {PublicChainMetrics, []},
         Hammer.child_for_supervisor()
@@ -121,6 +119,8 @@ defmodule BlockScoutWeb.Application do
       {
         base_workers ++ indexer_metric_worker(),
         [
+          {BlocksIndexedCounter, name: BlocksIndexedCounter},
+          {InternalTransactionsIndexedCounter, name: InternalTransactionsIndexedCounter},
           {Absinthe.Subscription, Endpoint}
         ]
       }
