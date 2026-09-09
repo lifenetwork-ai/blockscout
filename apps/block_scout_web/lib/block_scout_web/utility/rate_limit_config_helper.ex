@@ -19,13 +19,17 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelper do
   defp fetch_config do
     url = Application.get_env(:block_scout_web, :api_rate_limit)[:config_url]
 
-    with {:ok, config} <- download_config(url),
-         parsed_config <- parse_config(config) do
-      parsed_config
+    if is_binary(url) and url != "" do
+      with {:ok, config} <- download_config(url),
+           parsed_config <- parse_config(config) do
+        parsed_config
+      else
+        {:error, reason} ->
+          Logger.error("Failed to fetch rate limit config: #{inspect(reason)}. Fallback to local config.")
+          fallback_config()
+      end
     else
-      {:error, reason} ->
-        Logger.error("Failed to fetch rate limit config: #{inspect(reason)}. Fallback to local config.")
-        fallback_config()
+      fallback_config()
     end
   rescue
     error ->
